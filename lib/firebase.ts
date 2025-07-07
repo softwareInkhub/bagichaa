@@ -2030,4 +2030,19 @@ export const createOrderWithCoordinates = async (orderData: any) => {
     console.error('Error creating order with coordinates:', error)
     throw error
   }
+}
+
+// Real-time subscription to orders for a specific rider and status
+export const subscribeToRiderOrders = (riderId: string, callback: (orders: OrderData[]) => void) => {
+  const ordersRef = collection(db, 'orders')
+  const q = query(
+    ordersRef,
+    where('riderId', '==', riderId),
+    where('status', 'in', ['assigned', 'picked_up', 'out_for_delivery']),
+    orderBy('createdAt', 'desc')
+  )
+  return onSnapshot(q, (querySnapshot) => {
+    const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OrderData))
+    callback(orders)
+  })
 } 

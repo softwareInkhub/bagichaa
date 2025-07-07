@@ -22,6 +22,7 @@ import {
   subscribeToOrderTracking,
   getRiders
 } from '@/lib/firebase'
+import { useToast } from '@/components/ToastProvider'
 
 interface TrackingEvent {
   event: string
@@ -84,6 +85,8 @@ const OrderTrackingPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const { showToast } = useToast()
+  const prevStatusRef = React.useRef<string | null>(null)
 
   // Load order and tracking data
   useEffect(() => {
@@ -103,6 +106,15 @@ const OrderTrackingPage = () => {
 
     return () => unsubscribe()
   }, [orderId])
+
+  useEffect(() => {
+    if (trackingData && trackingData.status) {
+      if (prevStatusRef.current && prevStatusRef.current !== trackingData.status) {
+        showToast(`Order status updated: ${trackingData.status.replace('_', ' ')}`, 'info')
+      }
+      prevStatusRef.current = trackingData.status
+    }
+  }, [trackingData?.status])
 
   const loadOrderData = async () => {
     try {

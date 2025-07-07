@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Package, 
@@ -26,8 +26,10 @@ import {
   updateRiderLocation,
   updateOrderStatusWithRider,
   subscribeToOrderTracking,
-  getOrderTracking
+  getOrderTracking,
+  subscribeToRiderOrders
 } from '@/lib/firebase'
+import { useToast } from '@/components/ToastProvider'
 
 interface Order {
   id: string
@@ -67,6 +69,9 @@ const RiderDashboard = () => {
   const [isOnline, setIsOnline] = useState(false)
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null)
   const [loading, setLoading] = useState(true)
+  const locationIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const { showToast } = useToast()
+  const prevOrderStatusRef = useRef<string | null>(null)
 
   // Authentication check
   useEffect(() => {
@@ -79,38 +84,92 @@ const RiderDashboard = () => {
     setCurrentRider(rider)
     setIsOnline(rider?.status === 'online')
     
-    loadRiderData(rider.id)
+    // Use real-time subscription for rider orders
+    let unsubscribe: (() => void) | undefined
+    if (rider?.id) {
+      unsubscribe = subscribeToRiderOrders(rider.id, (orders) => {
+        const active = orders.find(order => 
+          ['assigned', 'picked_up', 'out_for_delivery'].includes(order.status)
+        )
+        const history = orders.filter(order => 
+          !['assigned', 'picked_up', 'out_for_delivery'].includes(order.status)
+        ).slice(0, 10)
+
+        setActiveOrder(active || null)
+        setOrderHistory(history)
+
+        // If there's an active order, subscribe to tracking
+        if (active) {
+          subscribeToOrderTracking(active.id, (tracking) => {
+            setTrackingData(tracking)
+          })
+        } else {
+          setTrackingData(null)
+        }
+        setLoading(false)
+      })
+    }
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [router])
 
-  // Load rider data
-  const loadRiderData = async (riderId: string) => {
-    try {
-      // Get rider orders
-      const orders = await getRiderOrders(riderId)
-      const active = orders.find(order => 
-        ['assigned', 'picked_up', 'out_for_delivery'].includes(order.status)
-      )
-      const history = orders.filter(order => 
-        !['assigned', 'picked_up', 'out_for_delivery'].includes(order.status)
-      ).slice(0, 10)
-
-      setActiveOrder(active || null)
-      setOrderHistory(history)
-
-      // If there's an active order, subscribe to tracking
-      if (active) {
-        const unsubscribe = subscribeToOrderTracking(active.id, (tracking) => {
-          setTrackingData(tracking)
-        })
-        return unsubscribe
+  // Start/stop location tracking based on online status
+  useEffect(() => {
+    if (isOnline) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            }
+            handleLocationUpdate(location)
+          },
+          (error) => {
+            alert('Location permission is required for delivery tracking. Please enable location services.')
+          },
+          { enableHighAccuracy: true }
+        )
+        // Start periodic updates
+        locationIntervalRef.current = setInterval(() => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const location = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              }
+              handleLocationUpdate(location)
+            }
+          )
+        }, 10000) // every 10 seconds
+      } else {
+        alert('Geolocation is not supported by your browser.')
       }
-
-      setLoading(false)
-    } catch (error) {
-      console.error('Error loading rider data:', error)
-      setLoading(false)
+    } else {
+      // Stop periodic updates
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current)
+        locationIntervalRef.current = null
+      }
     }
-  }
+    // Cleanup on unmount
+    return () => {
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current)
+        locationIntervalRef.current = null
+      }
+    }
+  }, [isOnline])
+
+  useEffect(() => {
+    if (activeOrder && activeOrder.status) {
+      if (prevOrderStatusRef.current && prevOrderStatusRef.current !== activeOrder.status) {
+        showToast(`Order status updated: ${activeOrder.status.replace('_', ' ')}`, 'info')
+      }
+      prevOrderStatusRef.current = activeOrder.status
+    }
+  }, [activeOrder?.status])
 
   // Handle online/offline toggle
   const handleStatusToggle = async () => {
@@ -166,9 +225,6 @@ const RiderDashboard = () => {
       }
 
       await updateOrderStatusWithRider(activeOrder.id, status, additionalData)
-      
-      // Reload data to get updated order
-      await loadRiderData(currentRider.id)
     } catch (error) {
       console.error('Error updating order status:', error)
     }

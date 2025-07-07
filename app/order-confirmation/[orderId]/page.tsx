@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { FiCheck, FiTruck, FiHome, FiClock, FiPhone } from 'react-icons/fi'
+import LiveTrackingMap from '@/components/LiveTrackingMap'
+import { subscribeToOrderTracking } from '@/lib/firebase'
 
 interface OrderConfirmationPageProps {
   params: {
@@ -14,6 +16,7 @@ interface OrderConfirmationPageProps {
 export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
   const router = useRouter()
   const [timeLeft, setTimeLeft] = useState(10)
+  const [trackingData, setTrackingData] = useState<any>(null)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -26,8 +29,15 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
       })
     }, 1000)
 
-    return () => clearInterval(timer)
-  }, [router])
+    const unsubscribe = subscribeToOrderTracking(params.orderId, (tracking) => {
+      setTrackingData(tracking)
+    })
+
+    return () => {
+      clearInterval(timer)
+      unsubscribe()
+    }
+  }, [router, params.orderId])
 
   const estimatedDelivery = new Date()
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 3)
@@ -133,6 +143,26 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                 </div>
               </div>
             </div>
+
+            {/* Live Tracking Preview */}
+            {trackingData && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-2">Live Order Tracking</h3>
+                <LiveTrackingMap
+                  orderId={params.orderId}
+                  trackingData={trackingData}
+                  mode="customer"
+                  height="200px"
+                  showControls={false}
+                />
+                <button
+                  onClick={() => router.push(`/track-order/${params.orderId}`)}
+                  className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors"
+                >
+                  Open Full Live Tracking
+                </button>
+              </div>
+            )}
 
             {/* Contact Info */}
             <div className="bg-gray-50 rounded-xl p-4 mb-6">

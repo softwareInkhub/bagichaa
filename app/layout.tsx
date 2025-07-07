@@ -5,6 +5,7 @@ import { CartProvider } from '../context/CartContext'
 import { WishlistProvider } from '../context/WishlistContext'
 import FloatingCartBar from '../components/FloatingCartBar'
 import FloatingWishlistBar from '../components/FloatingWishlistBar'
+import { ToastProvider } from '../components/ToastProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -104,15 +105,17 @@ export default function RootLayout({
         <link rel="canonical" href={siteUrl} />
       </head>
       <body className={inter.className}>
-        <CartProvider>
-          <WishlistProvider>
-            <div className="min-h-screen bg-gray-50">
-              <FloatingCartBar />
-              <FloatingWishlistBar />
-              {children}
-            </div>
-          </WishlistProvider>
-        </CartProvider>
+        <ToastProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <div className="min-h-screen bg-gray-50">
+                <FloatingCartBar />
+                <FloatingWishlistBar />
+                {children}
+              </div>
+            </WishlistProvider>
+          </CartProvider>
+        </ToastProvider>
         <div id="footer-observer-anchor" style={{ width: '100%', height: '20px' }} />
       </body>
     </html>

@@ -108,7 +108,11 @@ const RiderDashboard = () => {
         }
         setLoading(false)
       })
+    } else {
+      // No rider ID, set loading to false
+      setLoading(false)
     }
+    
     return () => {
       if (unsubscribe) unsubscribe()
     }

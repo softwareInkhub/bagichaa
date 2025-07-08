@@ -40,6 +40,10 @@ interface Order {
     street?: string
     city?: string
     coordinates?: { lat: number; lng: number }
+    addressLine1?: string
+    addressLine2?: string
+    landmark?: string
+    state?: string
   }
   items: Array<{
     name: string
@@ -379,8 +383,16 @@ const RiderDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">{activeOrder.customerName || 'Customer'}</p>
-                  <p className="text-sm text-gray-600">{activeOrder.address?.street || 'Address not available'}</p>
-                  <p className="text-sm text-gray-600">{activeOrder.address?.city || ''}</p>
+                  <p className="text-sm text-gray-600">
+                    {activeOrder.address?.street ||
+                     activeOrder.address?.addressLine1 ||
+                     activeOrder.address?.addressLine2 ||
+                     activeOrder.address?.landmark ||
+                     activeOrder.address?.city ||
+                     activeOrder.address?.state ||
+                     'Address not available'}
+                  </p>
+                  <p className="text-sm text-gray-600">{activeOrder.address?.city || activeOrder.address?.state || ''}</p>
                 </div>
                 <button
                   onClick={() => window.open(`tel:${activeOrder.customerPhone}`)}

@@ -84,21 +84,27 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
       // Default center (you can customize this)
       const defaultCenter = { lat: 28.6139, lng: 77.2090 } // Delhi
 
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+      // Only set styles if mapId is not present
+      const mapOptions: any = {
         zoom: 14,
         center: defaultCenter,
-        mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: mode === 'admin',
-        styles: [
+      }
+      if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID) {
+        mapOptions.mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID
+      } else {
+        mapOptions.styles = [
           {
             featureType: 'poi',
             elementType: 'labels',
             stylers: [{ visibility: 'off' }]
           }
         ]
-      })
+      }
+
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions)
 
       // Initialize directions service and renderer
       directionsServiceRef.current = new window.google.maps.DirectionsService()
@@ -167,7 +173,7 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
 
         // Update rider marker position
         if (riderMarkerRef.current) {
-          riderMarkerRef.current.setPosition(newLocation)
+          riderMarkerRef.current.position = newLocation
         } else {
           addRiderMarker(newLocation)
         }

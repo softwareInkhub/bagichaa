@@ -1775,13 +1775,20 @@ export const assignRiderToOrder = async (orderId: string, riderId: string) => {
       lastActiveAt: new Date()
     })
     
+    // Fetch order to get address coordinates
+    const orderSnap = await getDoc(orderRef)
+    let customerLocation = null
+    if (orderSnap.exists()) {
+      const orderData = orderSnap.data()
+      customerLocation = orderData?.address?.coordinates || null
+    }
     // Create tracking document
     const trackingRef = doc(collection(db, 'order_tracking'))
     batch.set(trackingRef, {
       orderId,
       riderId,
       status: 'assigned',
-      customerLocation: null, // Will be set from order address
+      customerLocation,
       riderLocation: null,
       estimatedArrival: null,
       actualDistance: null,

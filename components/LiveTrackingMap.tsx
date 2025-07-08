@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Loader2, Navigation, Phone, MapPin, Clock, Truck, Package, CheckCircle } from 'lucide-react'
+import { Loader } from '@googlemaps/js-api-loader'
 
 interface Location {
   lat: number
@@ -72,24 +73,6 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null)
   const [isTrackingLocation, setIsTrackingLocation] = useState(false)
 
-  // Load Google Maps API
-  const loadGoogleMaps = useCallback(() => {
-    if (window.google && window.google.maps) {
-      initializeMap()
-      return
-    }
-
-    if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
-      const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=geometry,places`
-      script.async = true
-      script.defer = true
-      script.onload = initializeMap
-      script.onerror = () => setMapError('Failed to load Google Maps')
-      document.head.appendChild(script)
-    }
-  }, [])
-
   // Initialize the map
   const initializeMap = useCallback(() => {
     if (!mapRef.current || !window.google) {
@@ -147,6 +130,18 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     }
   }, [mode, trackingData])
 
+  // Load Google Maps API using the recommended loader
+  const loadGoogleMaps = useCallback(() => {
+    const loader = new Loader({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+      version: 'weekly',
+      libraries: ['geometry', 'places'],
+    })
+    loader.load().then(() => {
+      initializeMap()
+    }).catch(() => setMapError('Failed to load Google Maps'))
+  }, [initializeMap])
+
   // Start GPS location tracking for riders
   const startLocationTracking = useCallback(() => {
     if (!navigator.geolocation) {
@@ -202,32 +197,27 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     setIsTrackingLocation(false)
   }, [])
 
-  // Add rider marker
+  // Add rider marker using AdvancedMarkerElement
   const addRiderMarker = useCallback((location: Location) => {
     if (!mapInstanceRef.current || !window.google) return
 
     if (riderMarkerRef.current) {
-      riderMarkerRef.current.setMap(null)
+      riderMarkerRef.current.map = null
     }
 
-    riderMarkerRef.current = new window.google.maps.Marker({
-      position: location,
+    const { AdvancedMarkerElement } = window.google.maps.marker
+    riderMarkerRef.current = new AdvancedMarkerElement({
       map: mapInstanceRef.current,
+      position: location,
       title: 'Delivery Partner',
-      icon: {
-        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="14" fill="#10B981" stroke="#ffffff" stroke-width="3"/>
-            <path d="M10 16L14 20L22 12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        `),
-        scaledSize: new window.google.maps.Size(32, 32),
-        anchor: new window.google.maps.Point(16, 16)
-      },
-      animation: window.google.maps.Animation.DROP
+      content: (() => {
+        const div = document.createElement('div')
+        div.innerHTML = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#10B981" stroke="#ffffff" stroke-width="3"/><path d="M10 16L14 20L22 12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        return div
+      })(),
     })
 
-    // Add info window for rider
+    // Add info window for rider (optional, can be migrated to Advanced InfoWindow if needed)
     if (riderInfo && mode !== 'rider') {
       const infoWindow = new window.google.maps.InfoWindow({
         content: `
@@ -266,28 +256,24 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     }
   }, [riderInfo, mode])
 
-  // Add customer marker
+  // Add customer marker using AdvancedMarkerElement
   const addCustomerMarker = useCallback((location: Location) => {
     if (!mapInstanceRef.current || !window.google) return
 
     if (customerMarkerRef.current) {
-      customerMarkerRef.current.setMap(null)
+      customerMarkerRef.current.map = null
     }
 
-    customerMarkerRef.current = new window.google.maps.Marker({
-      position: location,
+    const { AdvancedMarkerElement } = window.google.maps.marker
+    customerMarkerRef.current = new AdvancedMarkerElement({
       map: mapInstanceRef.current,
+      position: location,
       title: 'Delivery Address',
-      icon: {
-        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="14" fill="#EF4444" stroke="#ffffff" stroke-width="3"/>
-            <path d="M16 8v8l4 4" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        `),
-        scaledSize: new window.google.maps.Size(32, 32),
-        anchor: new window.google.maps.Point(16, 16)
-      }
+      content: (() => {
+        const div = document.createElement('div')
+        div.innerHTML = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#EF4444" stroke="#ffffff" stroke-width="3"/><path d="M16 8v8l4 4" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        return div
+      })(),
     })
   }, [])
 

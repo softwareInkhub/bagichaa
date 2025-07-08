@@ -40,6 +40,7 @@ interface LiveTrackingMapProps {
     vehicle: string
     rating: number
   }
+  customerAddress?: string
 }
 
 declare global {
@@ -58,7 +59,8 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   showRoute = true,
   onLocationUpdate,
   onDirectionsClick,
-  riderInfo
+  riderInfo,
+  customerAddress
 }) => {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
@@ -72,6 +74,9 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   const [mapError, setMapError] = useState<string | null>(null)
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null)
   const [isTrackingLocation, setIsTrackingLocation] = useState(false)
+  const [directionsModalOpen, setDirectionsModalOpen] = useState(false)
+  const [routeSummary, setRouteSummary] = useState<{ eta: string; distance: string } | null>(null)
+  const [routeError, setRouteError] = useState<string | null>(null)
 
   // Initialize the map
   const initializeMap = useCallback(() => {
@@ -380,6 +385,60 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     }
   }
 
+  // Helper to get full customer address
+  const getCustomerAddress = () => {
+    if (customerAddress) return customerAddress
+    return 'Address not available'
+  }
+
+  // Calculate ETA and distance using DirectionsService
+  const fetchRouteSummary = async () => {
+    setRouteError(null)
+    setRouteSummary(null)
+    if (!window.google || !trackingData?.riderLocation || !trackingData?.customerLocation) {
+      setRouteError('Location data missing for navigation.')
+      return
+    }
+    try {
+      const service = new window.google.maps.DirectionsService()
+      service.route(
+        {
+          origin: trackingData.riderLocation,
+          destination: trackingData.customerLocation,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result: any, status: any) => {
+          if (status === 'OK' && result) {
+            const leg = result.routes[0].legs[0]
+            setRouteSummary({
+              eta: leg.duration?.text || 'N/A',
+              distance: leg.distance?.text || 'N/A',
+            })
+          } else {
+            setRouteError('Could not calculate route. Please try again.')
+          }
+        }
+      )
+    } catch (e) {
+      setRouteError('Could not calculate route. Please try again.')
+    }
+  }
+
+  // Handler for Directions button
+  const handleDirectionsClick = () => {
+    setDirectionsModalOpen(true)
+    fetchRouteSummary()
+  }
+
+  // Handler for Start Navigation
+  const handleStartNavigation = () => {
+    if (trackingData?.customerLocation) {
+      const { lat, lng } = trackingData.customerLocation
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`
+      window.open(url, '_blank')
+    }
+  }
+
   useEffect(() => {
     if (mapRef.current) {
       loadGoogleMaps()
@@ -466,15 +525,55 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
               </div>
             </div>
 
-            {mode === 'rider' && onDirectionsClick && (
+            {mode === 'rider' && (
               <button
-                onClick={onDirectionsClick}
+                onClick={handleDirectionsClick}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors"
               >
                 <Navigation className="w-4 h-4" />
                 Directions
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Directions Modal */}
+      {mode === 'rider' && directionsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setDirectionsModalOpen(false)}
+            >
+              <span className="text-xl">&times;</span>
+            </button>
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2"><Navigation className="w-5 h-5" /> Directions</h2>
+            <div className="mb-2">
+              <div className="text-xs text-gray-500 mb-1">Customer Address</div>
+              <div className="text-sm text-gray-900 font-medium">{getCustomerAddress()}</div>
+            </div>
+            {routeError && <div className="text-red-600 text-sm mb-2">{routeError}</div>}
+            {routeSummary ? (
+              <div className="mb-2">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <span>ETA:</span>
+                  <span className="font-semibold">{routeSummary.eta}</span>
+                  <span>&bull;</span>
+                  <span>Distance:</span>
+                  <span className="font-semibold">{routeSummary.distance}</span>
+                </div>
+              </div>
+            ) : !routeError && (
+              <div className="text-gray-500 text-sm mb-2">Calculating route...</div>
+            )}
+            <button
+              className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              onClick={handleStartNavigation}
+              disabled={!!routeError || !routeSummary}
+            >
+              <Navigation className="w-5 h-5" /> Start Navigation
+            </button>
           </div>
         </div>
       )}

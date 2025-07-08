@@ -15,4 +15,4 @@
         ${s}
       </text>
     </svg>
-  `,i=`data:image/svg+xml;base64,${btoa(l)}`;return t.jsx("img",{src:i,alt:s,width:e,height:r,className:a})}},53590:(e,r,s)=>{"use strict";s.r(r),s.d(r,{$$typeof:()=>l,__esModule:()=>a,default:()=>i});let t=(0,s(86843).createProxy)(String.raw`C:\Users\User\bagichaa\app\admin\products\page.tsx`),{__esModule:a,$$typeof:l}=t,i=t.default}};var r=require("../../../webpack-runtime.js");r.C(e);var s=e=>r(r.s=e),t=r.X(0,[638,867,275,456,483,521,0],()=>s(49301));module.exports=t})();
+  `,i=`data:image/svg+xml;base64,${btoa(l)}`;return t.jsx("img",{src:i,alt:s,width:e,height:r,className:a})}},53590:(e,r,s)=>{"use strict";s.r(r),s.d(r,{$$typeof:()=>l,__esModule:()=>a,default:()=>i});let t=(0,s(86843).createProxy)(String.raw`C:\Users\User\bagichaa\app\admin\products\page.tsx`),{__esModule:a,$$typeof:l}=t,i=t.default}};var r=require("../../../webpack-runtime.js");r.C(e);var s=e=>r(r.s=e),t=r.X(0,[638,867,275,456,872,521,0],()=>s(49301));module.exports=t})();

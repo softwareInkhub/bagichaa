@@ -434,6 +434,14 @@ const RiderDashboard = () => {
                     height="200px"
                     onLocationUpdate={handleLocationUpdate}
                     onDirectionsClick={openDirections}
+                    customerAddress={[
+                      activeOrder.address?.street,
+                      activeOrder.address?.addressLine1,
+                      activeOrder.address?.addressLine2,
+                      activeOrder.address?.landmark,
+                      activeOrder.address?.city,
+                      activeOrder.address?.state
+                    ].filter(Boolean).join(', ')}
                   />
                 </div>
               )}

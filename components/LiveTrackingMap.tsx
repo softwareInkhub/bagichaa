@@ -135,7 +135,7 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     const loader = new Loader({
       apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
       version: 'weekly',
-      libraries: ['geometry', 'places'],
+      libraries: ['geometry', 'places', 'marker'],
     })
     loader.load().then(() => {
       initializeMap()
@@ -198,8 +198,8 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   }, [])
 
   // Add rider marker using AdvancedMarkerElement
-  const addRiderMarker = useCallback((location: Location) => {
-    if (!mapInstanceRef.current || !window.google) return
+  const addRiderMarker = useCallback((location: Location | null) => {
+    if (!mapInstanceRef.current || !window.google || !location) return
 
     if (riderMarkerRef.current) {
       riderMarkerRef.current.map = null
@@ -257,8 +257,8 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   }, [riderInfo, mode])
 
   // Add customer marker using AdvancedMarkerElement
-  const addCustomerMarker = useCallback((location: Location) => {
-    if (!mapInstanceRef.current || !window.google) return
+  const addCustomerMarker = useCallback((location: Location | null) => {
+    if (!mapInstanceRef.current || !window.google || !location) return
 
     if (customerMarkerRef.current) {
       customerMarkerRef.current.map = null
@@ -278,8 +278,8 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   }, [])
 
   // Calculate and display route
-  const calculateRoute = useCallback((origin: Location, destination: Location) => {
-    if (!directionsServiceRef.current || !directionsRendererRef.current) return
+  const calculateRoute = useCallback((origin: Location | null, destination: Location | null) => {
+    if (!directionsServiceRef.current || !directionsRendererRef.current || !origin || !destination) return
 
     directionsServiceRef.current.route(
       {
@@ -399,6 +399,21 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
         </div>
         <p className="text-red-700 font-medium">Map Error</p>
         <p className="text-red-600 text-sm mt-1">{mapError}</p>
+      </div>
+    )
+  }
+
+  if (!trackingData || (!trackingData.riderLocation && !trackingData.customerLocation)) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center" style={{ height }}>
+        <div className="text-yellow-600 mb-2">
+          <MapPin className="w-8 h-8 mx-auto" />
+        </div>
+        <p className="text-yellow-700 font-medium">Location Data Missing</p>
+        <p className="text-yellow-600 text-sm mt-1">
+          Rider and/or customer location is not available yet.<br />
+          Please ensure the rider app is sharing location and the order has a valid delivery address with coordinates.
+        </p>
       </div>
     )
   }

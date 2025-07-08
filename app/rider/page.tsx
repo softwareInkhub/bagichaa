@@ -118,20 +118,21 @@ const RiderDashboard = () => {
     }
   }, [router])
 
-  // Start/stop location tracking based on online status
+  // Location tracking effect
   useEffect(() => {
-    if (isOnline) {
+    if (isOnline && currentRider && currentRider.id) {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const location = {
               lat: position.coords.latitude,
-              lng: position.coords.longitude
+              lng: position.coords.longitude,
             }
-            handleLocationUpdate(location)
+            updateRiderLocation(currentRider.id, location)
           },
           (error) => {
-            alert('Location permission is required for delivery tracking. Please enable location services.')
+            alert('Location permission denied. Please enable location sharing to receive orders and update your location.')
+            setIsOnline(false)
           },
           { enableHighAccuracy: true }
         )
@@ -141,30 +142,34 @@ const RiderDashboard = () => {
             (position) => {
               const location = {
                 lat: position.coords.latitude,
-                lng: position.coords.longitude
+                lng: position.coords.longitude,
               }
-              handleLocationUpdate(location)
-            }
+              updateRiderLocation(currentRider.id, location)
+            },
+            (error) => {
+              alert('Location update failed. Please check your device settings.')
+              setIsOnline(false)
+            },
+            { enableHighAccuracy: true }
           )
-        }, 10000) // every 10 seconds
+        }, 10000)
       } else {
         alert('Geolocation is not supported by your browser.')
+        setIsOnline(false)
       }
     } else {
-      // Stop periodic updates
       if (locationIntervalRef.current) {
         clearInterval(locationIntervalRef.current)
         locationIntervalRef.current = null
       }
     }
-    // Cleanup on unmount
     return () => {
       if (locationIntervalRef.current) {
         clearInterval(locationIntervalRef.current)
         locationIntervalRef.current = null
       }
     }
-  }, [isOnline])
+  }, [isOnline, currentRider && currentRider.id])
 
   useEffect(() => {
     if (activeOrder && activeOrder.status) {
@@ -177,6 +182,7 @@ const RiderDashboard = () => {
 
   // Handle online/offline toggle
   const handleStatusToggle = async () => {
+    if (!currentRider || !currentRider.id) return
     try {
       const newStatus = isOnline ? 'offline' : 'online'
       await updateRiderStatus(currentRider.id, newStatus)
@@ -249,6 +255,15 @@ const RiderDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('currentRider')
     router.push('/rider/auth/login')
+  }
+
+  // Defensive: If activeOrder exists but no riderLocation, show a prompt
+  if (activeOrder && !trackingData?.riderLocation) {
+    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center mb-4">
+      <p className="text-yellow-700 font-medium">
+        Location not shared. Please enable location sharing to update your position for live tracking.
+      </p>
+    </div>
   }
 
   if (loading) {

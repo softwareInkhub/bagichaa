@@ -87,6 +87,7 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         zoom: 14,
         center: defaultCenter,
+        mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: mode === 'admin',

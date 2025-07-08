@@ -1695,6 +1695,26 @@ export const updateRiderLocation = async (riderId: string, location: {lat: numbe
       },
       lastLocationUpdate: new Date()
     })
+
+    // Also update riderLocation in order_tracking for the active order
+    // Find the rider's current order
+    const riderSnap = await getDoc(riderRef)
+    const riderData = riderSnap.data()
+    const currentOrderId = riderData?.currentOrderId
+    if (currentOrderId) {
+      const trackingRef = query(
+        collection(db, 'order_tracking'),
+        where('orderId', '==', currentOrderId)
+      )
+      const trackingSnap = await getDocs(trackingRef)
+      if (!trackingSnap.empty) {
+        const trackingDoc = trackingSnap.docs[0]
+        await updateDoc(trackingDoc.ref, {
+          riderLocation: location,
+          updatedAt: new Date()
+        })
+      }
+    }
   } catch (error) {
     console.error('Error updating rider location:', error)
     throw error

@@ -18,4 +18,4 @@
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
- */let r=(0,s(69224).Z)("Shield",[["path",{d:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10",key:"1irkt0"}]])},75617:(e,t,s)=>{"use strict";s.r(t),s.d(t,{$$typeof:()=>n,__esModule:()=>a,default:()=>i});let r=(0,s(86843).createProxy)(String.raw`C:\Users\User\bagichaa\app\auth\login\page.tsx`),{__esModule:a,$$typeof:n}=r,i=r.default}};var t=require("../../../webpack-runtime.js");t.C(e);var s=e=>t(t.s=e),r=t.X(0,[638,867,275,872,521],()=>s(4714));module.exports=r})();
+ */let r=(0,s(69224).Z)("Shield",[["path",{d:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10",key:"1irkt0"}]])},75617:(e,t,s)=>{"use strict";s.r(t),s.d(t,{$$typeof:()=>n,__esModule:()=>a,default:()=>i});let r=(0,s(86843).createProxy)(String.raw`C:\Users\User\bagichaa\app\auth\login\page.tsx`),{__esModule:a,$$typeof:n}=r,i=r.default}};var t=require("../../../webpack-runtime.js");t.C(e);var s=e=>t(t.s=e),r=t.X(0,[638,867,275,483,521],()=>s(4714));module.exports=r})();

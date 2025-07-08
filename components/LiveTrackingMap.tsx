@@ -75,6 +75,7 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
 
   // Initialize the map
   const initializeMap = useCallback(() => {
+    if (mapInstanceRef.current) return; // Prevent double initialization
     if (!mapRef.current || !window.google) {
       setMapError('Map container not available')
       return
@@ -388,7 +389,7 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
         navigator.geolocation.clearWatch(watchPositionIdRef.current)
       }
     }
-  }, [loadGoogleMaps])
+  }, [])
 
   useEffect(() => {
     if (trackingData && mapInstanceRef.current) {

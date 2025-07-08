@@ -58,4 +58,4 @@
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
- */let r=(0,t(69224).Z)("Zap",[["polygon",{points:"13 2 3 14 12 14 11 22 21 10 12 10 13 2",key:"45s27k"}]])},74017:(e,s,t)=>{"use strict";t.r(s),t.d(s,{$$typeof:()=>l,__esModule:()=>a,default:()=>i});let r=(0,t(86843).createProxy)(String.raw`C:\Users\User\bagichaa\app\account\page.tsx`),{__esModule:a,$$typeof:l}=r,i=r.default}};var s=require("../../webpack-runtime.js");s.C(e);var t=e=>s(s.s=e),r=s.X(0,[638,867,275,872,521],()=>t(34383));module.exports=r})();
+ */let r=(0,t(69224).Z)("Zap",[["polygon",{points:"13 2 3 14 12 14 11 22 21 10 12 10 13 2",key:"45s27k"}]])},74017:(e,s,t)=>{"use strict";t.r(s),t.d(s,{$$typeof:()=>l,__esModule:()=>a,default:()=>i});let r=(0,t(86843).createProxy)(String.raw`C:\Users\User\bagichaa\app\account\page.tsx`),{__esModule:a,$$typeof:l}=r,i=r.default}};var s=require("../../webpack-runtime.js");s.C(e);var t=e=>s(s.s=e),r=s.X(0,[638,867,275,483,521],()=>t(34383));module.exports=r})();

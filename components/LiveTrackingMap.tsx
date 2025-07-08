@@ -374,8 +374,9 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   }
 
   useEffect(() => {
-    loadGoogleMaps()
-
+    if (mapRef.current) {
+      loadGoogleMaps()
+    }
     return () => {
       if (watchPositionIdRef.current) {
         navigator.geolocation.clearWatch(watchPositionIdRef.current)

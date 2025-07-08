@@ -1782,31 +1782,54 @@ export const assignRiderToOrder = async (orderId: string, riderId: string) => {
       const orderData = orderSnap.data()
       customerLocation = orderData?.address?.coordinates || null
     }
-    // Create tracking document
-    const trackingRef = doc(collection(db, 'order_tracking'))
-    batch.set(trackingRef, {
-      orderId,
-      riderId,
-      status: 'assigned',
-      customerLocation,
-      riderLocation: null,
-      estimatedArrival: null,
-      actualDistance: null,
-      estimatedDistance: null,
-      route: [],
-      trackingEvents: [{
-        event: 'order_assigned',
-        timestamp: new Date(),
-        location: null,
-        note: 'Order assigned to rider'
-      }],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
+    // Check if tracking doc already exists (reassignment case)
+    const trackingQuery = query(collection(db, 'order_tracking'), where('orderId', '==', orderId))
+    const trackingSnap = await getDocs(trackingQuery)
+    if (!trackingSnap.empty) {
+      // Update existing tracking doc
+      const trackingDoc = trackingSnap.docs[0]
+      batch.update(trackingDoc.ref, {
+        riderId,
+        status: 'assigned',
+        customerLocation, // always set from order
+        updatedAt: new Date(),
+        trackingEvents: [
+          ...(trackingDoc.data().trackingEvents || []),
+          {
+            event: 'order_assigned',
+            timestamp: new Date(),
+            location: null,
+            note: 'Order assigned to rider'
+          }
+        ]
+      })
+    } else {
+      // Create tracking document
+      const trackingRef = doc(collection(db, 'order_tracking'))
+      batch.set(trackingRef, {
+        orderId,
+        riderId,
+        status: 'assigned',
+        customerLocation,
+        riderLocation: null,
+        estimatedArrival: null,
+        actualDistance: null,
+        estimatedDistance: null,
+        route: [],
+        trackingEvents: [{
+          event: 'order_assigned',
+          timestamp: new Date(),
+          location: null,
+          note: 'Order assigned to rider'
+        }],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+    }
     
     await batch.commit()
     
-    return trackingRef.id
+    return true
   } catch (error) {
     console.error('Error assigning rider to order:', error)
     throw error
@@ -1858,9 +1881,18 @@ export const updateOrderStatusWithRider = async (
     if (!trackingSnapshot.empty) {
       const trackingDoc = trackingSnapshot.docs[0]
       const currentEvents = trackingDoc.data().trackingEvents || []
-      
+      let customerLocation = trackingDoc.data().customerLocation
+      // If missing, fetch from order
+      if (!customerLocation) {
+        const orderSnap = await getDoc(orderRef)
+        if (orderSnap.exists()) {
+          const orderData = orderSnap.data()
+          customerLocation = orderData?.address?.coordinates || null
+        }
+      }
       batch.update(trackingDoc.ref, {
         status,
+        customerLocation, // always set if missing
         trackingEvents: [
           ...currentEvents,
           {
